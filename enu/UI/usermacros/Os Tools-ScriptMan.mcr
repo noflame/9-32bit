@@ -4,27 +4,36 @@ macroScript ScriptMan
 	buttontext:"ScriptMan"
 	
 (
-	
-
 	rollout ro_ScriptMan "ScriptMan 0.42"
 	(
-		-- Global Variable Declerations
+
+		-- Global Variable Declerations
 		------------------------------------
 		global scriptManRootDirList
 
 
 		-- Local Struct Declerations
 		------------------------------------
-		struct s_file (
+	
+		struct s_file (
 			dispName,
 			filename, 
 			type,		-- type: #file / #dir
-			results = undefined,
+			
+			results = undefined,
 			
 			fn editFile =
 			(
 				if type == #file and doesFileExist filename then
-					edit filename
+				(
+					if ( (maxVersion())[1] < 10000 ) then
+					try (
+							print "N++" 
+							hiddenDosCommand ("\"C:\\Program Files\\Notepad++\\notepad++.exe\" "+filename) startpath:"c:\\"
+						) catch (edit filename)
+					else edit filename
+				)	
+				
 			),
 			
 			fn exec =
@@ -41,11 +50,13 @@ macroScript ScriptMan
 		) 
 	
 	
-		-- Local Variable Devlerations
+	
+	-- Local Variable Devlerations
 		---------------------------------
 		local INIFile = getDir #scripts + "\\ScriptMan.ini"
 		local rolloutHeight
-		local fileList = #()
+
+		local fileList = #()
 		local favorites = #()
 		local favVisible = true
 		local searchResults = #()
@@ -71,7 +82,8 @@ macroScript ScriptMan
 			radioButtons rbShowResults "" labels:#("", "  Search results") columns:1 align:#left offset:[-5,-20]
 		)
 		
-		group "Search Text In Files: " (
+		
+group "Search Text In Files: " (
 			editText edSearchText "" fieldWidth:190 offset:[-8,-2]
 		)
 		
@@ -100,7 +112,8 @@ macroScript ScriptMan
 				append arr item
 		)
 		
-		fn uniqueInsert &arr item n =
+		
+fn uniqueInsert &arr item n =
 		(
 			local nameArr = for a in arr collect a as name
 			for i = 1 to nameArr.count where nameArr[i] == (item as name) do
@@ -138,7 +151,8 @@ macroScript ScriptMan
 			tmpStr
 		)
 
-		-- replaces all occurrences of findStr string in str string with replaceStr string.
+	
+	-- replaces all occurrences of findStr string in str string with replaceStr string.
 		fn replaceString str findStr replaceStr ignoreCase:true =
 		(
 			local tmpStr = if (ignoreCase == true) then (toLowerCase str) else (copy str)
@@ -156,17 +170,20 @@ macroScript ScriptMan
 	
 
 		
-		fn getParentDir d = 
+		
+fn getParentDir d = 
 		(
 			local arr = filterString d "/\\"
-			local str = arr[1] + "\\"
+
+			local str = arr[1] + "\\"
 			for i = 2 to (arr.count - 1) do
 				str += arr[i] + "\\"
 			str
 		)
 		
 
-		fn getDispName f rootDir =
+	
+	fn getDispName f rootDir =
 		(
 			subString f (rootDir.count + 1)(f.count - rootDir.count - 1)
 		)
@@ -180,12 +197,15 @@ macroScript ScriptMan
 				root += "\\"
 	
 			if files then (
-				for f in getFiles (root + pattern) do 
+		
+		for f in getFiles (root + pattern) do 
 					append my_files (s_file ("     " + (getFilenameFile f)) (replaceString f "\\\\" "\\") #file)
 			)
 	
 			local dir_array = GetDirectories (root + "*") 
-			for d in dir_array do (
+	
+		
+for d in dir_array do (
 				d = replaceString d "\\\\" "\\"
 				local dname = (getDispName d dlRootDir.text)
 				if dname[1] == "\\" or dname[1] == "/" then
@@ -200,7 +220,8 @@ macroScript ScriptMan
 		)
 
 
-		fn search txt rootDir =
+
+		fn search txt rootDir =
 		(
 			local outFile = sysInfo.tempdir + "scriptman_search.txt"
 			deleteFile outFile
@@ -236,7 +257,8 @@ macroScript ScriptMan
 		)
 
 
-		fn addToHistory dir =
+
+		fn addToHistory dir =
 		(
 			local n = uniqueInsert scriptManRootDirList dir 1
 			if n != 1 then (
@@ -264,14 +286,16 @@ macroScript ScriptMan
 				
 		fn updateUI =
 		(
-			spMaxDepth.enabled = cbShowSubDirs.checked
+
+			spMaxDepth.enabled = cbShowSubDirs.checked
 			case rbShowResults.state of (
 				1: lbFiles.items = for i in fileList collect i.dispName
 				2: lbFiles.items = for i in searchResults collect i.dispName
 			)
 
 			lbFavorites.items = for f in favorites collect f.dispName
-		)
+
+		)
 		
 		
 		fn saveToINIFile =
@@ -291,7 +315,8 @@ macroScript ScriptMan
 
 
 			setINISetting INIFile "Favorites" "FavCount" (favorites.count as string)
-			for i = 1 to favorites.count do
+
+			for i = 1 to favorites.count do
 				setINISetting INIFile "Favorites" ("Fav" + i as string) (favorites[i].dispName as string + "\t" + favorites[i].filename as string + "\t" + favorites[i].type as string)	
 		)
 		
@@ -304,7 +329,8 @@ macroScript ScriptMan
 			if not isKindOf historyLength integer or historyLength < 1 then 
 				historyLength = 15
 
-			try (cbShowDirs.state =  (getINISetting INIFile "Settings" "ShowDirs") != "false")catch()
+
+			try (cbShowDirs.state =  (getINISetting INIFile "Settings" "ShowDirs") != "false")catch()
 			try (cbShowFiles.state =  (getINISetting INIFile "Settings" "ShowFiles") != "false")catch()
 			try (cbShowSubDirs.state = ((getINISetting INIFile "Settings" "ShowSubDirs") != "false"))catch()
 			cbShowSubDirs.changed cbShowSubDirs.state
@@ -316,14 +342,16 @@ macroScript ScriptMan
 				if d != "" then
 					append hist d
 			)
-			if hist.count > 0 then
+
+			if hist.count > 0 then
 				scriptManRootDirList = hist
 			
 			local favCount = try((getINISetting INIFile "Favorites" "FavCount") as integer)catch(0)
 			for i = 1 to favCount do (
 				local f = getINISetting INIFile "Favorites" ("Fav" + i as string)
 				if f != "" then (
-					f = filterString f "\t"
+					
+f = filterString f "\t"
 					if f.count > 2 then
 						append favorites (s_file f[1] f[2] (f[3] as name))
 				)
@@ -359,12 +387,15 @@ macroScript ScriptMan
 		)
 
 
-		on dlRootDir selected val do (
+		
+
+on dlRootDir selected val do (
 			local d = dlRootDir.items[val]
 			addToHistory d
 			dlRootDir.items = scriptManRootDirList
 			dlRootDir.selection = findItem (for i in dlRootDir.items collect i as name) (d as name)
-			getFileList()
+
+			getFileList()
 			updateUI()
 		)
 		
@@ -376,12 +407,14 @@ macroScript ScriptMan
 				addToHistory fname
 				dlRootDir.items = scriptManRootDirList
 				dlRootDir.selection = findItem (for i in dlRootDir.items collect i as name) (fname as name)
-				getFileList()
+
+				getFileList()
 				updateUI()
 			)
 		)
 		
-		on cbShowDirs changed state do (
+		
+on cbShowDirs changed state do (
 			getFileList()
 			updateUI()
 		)
@@ -391,7 +424,8 @@ macroScript ScriptMan
 			updateUI()
 		)
 		
-		on cbShowSubDirs changed state do (
+
+		on cbShowSubDirs changed state do (
 			if state then
 				maxDepth = maxRecurseDepth
 			else 
@@ -408,12 +442,14 @@ macroScript ScriptMan
 		)
 
 
-		on edSearchText entered txt do (
+
+		on edSearchText entered txt do (
 			rbShowResults.state = 2 
 			searchResults = search txt dlRootDir.selected
 			updateUI()
 		)
-		
+
+		
 		on rbShowResults changed state do (
 			updateUI()
 		)
@@ -446,7 +482,8 @@ macroScript ScriptMan
 		)
 		
 		
-		on bnShowHideFav pressed do (
+		on 
+bnShowHideFav pressed do (
 			if favVisible then (
 				lbFavorites.visible = false
 				ro_ScriptMan.height -= 162
